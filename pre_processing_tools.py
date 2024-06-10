@@ -2,7 +2,7 @@ from pretty_midi import PrettyMIDI
 import numpy as np
 
 
-SLICES_PER_BEAT = 2
+SLICES_PER_BEAT = 32
 DESIRED_BPM = 120
 VERBAL = True
 
@@ -12,6 +12,16 @@ def is_first_note_aligned(midi_data: PrettyMIDI) -> bool:
         raise Exception("Midi object contains more than 1 instrument.")
     first_note = midi_data.instruments[0].notes[0]
     return first_note.start == 0
+
+
+def make_instrument_drum(midi_data: PrettyMIDI) -> PrettyMIDI:
+    midi_data.instruments[0].is_drum = True
+    return midi_data
+
+
+def make_instrument_not_drum(midi_data: PrettyMIDI) -> PrettyMIDI:
+    midi_data.instruments[0].is_drum = False
+    return midi_data
 
 
 def align_all_notes_to_origin(midi_data: PrettyMIDI) -> PrettyMIDI:
@@ -68,17 +78,21 @@ def change_tempo(midi_data: PrettyMIDI, target_bpm: int, original_bpm: int) -> P
 def filter_to_kick_drum(midi_data: PrettyMIDI) -> PrettyMIDI:
     if VERBAL: print("-> Filtering everything but kick...", end="")
     # MIDI note numbers for kick drums
-    # kick_drum_notes = [35, 36]
-    kick_drum_notes = [36]
+    kick_drum_notes = [35, 36]
     # Create a new PrettyMIDI object to store the filtered MIDI
     new_midi_data = PrettyMIDI()
     # Iterate over instruments and keep only drum instruments
     for instrument in midi_data.instruments:
         if instrument.is_drum:
             # Filter notes to keep only kick drum notes
-            new_notes = [note for note in instrument.notes if note.pitch in kick_drum_notes]
+            new_notes = []
+            for note in instrument.notes:
+                if note.pitch in kick_drum_notes:
+                    note.pitch = 36
+                    new_notes.append(note)
             instrument.notes = new_notes
         new_midi_data.instruments.append(instrument)
+        
     if VERBAL: print(" DONE")
     return new_midi_data
 
