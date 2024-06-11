@@ -5,7 +5,7 @@ import numpy as np
 
 
 BATCH_DURATION = 2  # seconds
-SLICES_PER_BEAT = 16
+SLICES_PER_BEAT = 2
 DESIRED_BPM = 120
 VERBAL = False
 
