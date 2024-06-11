@@ -1,15 +1,20 @@
 from pretty_midi import PrettyMIDI
+from pretty_midi import Instrument
+from pretty_midi import Note
 import numpy as np
 
 
-SLICES_PER_BEAT = 32
+BATCH_DURATION = 2  # seconds
+SLICES_PER_BEAT = 16
 DESIRED_BPM = 120
-VERBAL = True
+VERBAL = False
 
 
 def is_first_note_aligned(midi_data: PrettyMIDI) -> bool:
-    if len(midi_data.instruments) > 1:
-        raise Exception("Midi object contains more than 1 instrument.")
+    if len(midi_data.instruments) > 1 or len(midi_data.instruments) == 0:
+        raise Exception("Midi object contains more than 1 instrument or no tracks.")
+    if len(midi_data.instruments[0].notes) < 1:
+        raise Exception("Midi object contains track with no notes.")
     first_note = midi_data.instruments[0].notes[0]
     return first_note.start == 0
 
@@ -92,10 +97,44 @@ def filter_to_kick_drum(midi_data: PrettyMIDI) -> PrettyMIDI:
                     new_notes.append(note)
             instrument.notes = new_notes
         new_midi_data.instruments.append(instrument)
-        
     if VERBAL: print(" DONE")
     return new_midi_data
 
 
 def midi_to_bit_vector(midi_data: PrettyMIDI) -> np.ndarray:
-    pass
+    if VERBAL: print("-> Converting MIDI to bit vector...", end="")
+    bit_vector = midi_data.get_piano_roll(SLICES_PER_BEAT)
+    if VERBAL: print(" DONE")
+    return bit_vector
+
+
+def slice_midi_to_batches(midi_data: PrettyMIDI, batch_duration: float = BATCH_DURATION) -> list | PrettyMIDI:
+    if VERBAL: print("-> Slicing midi to batches...", end="")
+    num_of_batches = int(midi_data.instruments[0].notes[-1].end // 2)
+    batches = [0] * num_of_batches
+    batch_idx = 0
+    time = 2
+    notes = []
+    for i, note in enumerate(midi_data.instruments[0].notes):
+        # print(f"Note #{i}/{len(midi_data.instruments[0].notes)}")
+        # print(f"Batch idx: {batch_idx}")
+        if batch_idx >= num_of_batches:
+            break
+        if note.end >= time:
+            # print(f"\t Batch idx: {batch_idx}")
+            # print(f"\t Num of notes: {len(notes)}")
+            if len(notes) == 0:
+                del batches[batch_idx]
+            else:
+                batch = PrettyMIDI()
+                batch_instrument = Instrument(midi_data.instruments[0].program)
+                batch_instrument.notes.extend(notes)
+                batch.instruments.append(batch_instrument)
+                batches[batch_idx] = batch
+                batch_idx += 1
+            time += batch_duration
+            notes = []
+        else:
+            notes.append(note)
+    if VERBAL: print(" DONE")
+    return batches

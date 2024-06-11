@@ -9,6 +9,7 @@ from pre_processing_tools import change_tempo
 from pre_processing_tools import filter_to_kick_drum
 from pre_processing_tools import make_all_notes_same_volume
 from pre_processing_tools import are_tempo_changes_correct
+from pre_processing_tools import slice_midi_to_batches
 
 
 def print_info(midi_data: PrettyMIDI) -> None:
@@ -32,7 +33,7 @@ def create_simple_beat(bpm: int = 120) -> PrettyMIDI:
         Note(velocity=127, pitch=42, start=0.5, end=1),
         Note(velocity=127, pitch=38, start=1, end=1.5),
         Note(velocity=127, pitch=42, start=1.5, end=2),
-        # Note(velocity=127, pitch=42, start=2, end=2.5),
+        Note(velocity=127, pitch=42, start=2, end=2.5),
         ]
     # drums_notes = [Note(velocity=127, pitch=p, start=t, end=t+10) for t, p in zip([j*10+10 for j in range(4)], pitch_sequence)]
     drums.notes.extend(drums_notes)
@@ -78,7 +79,7 @@ print_info(output_midi)
 # print(str(path))
 # output_midi.write(str(path))
 
-piano_roll = output_midi.get_piano_roll(32)
+piano_roll = output_midi.get_piano_roll(16)
 print(piano_roll.shape)
 print(np.count_nonzero(piano_roll))
 # print(output_midi.get_beats())
@@ -107,6 +108,10 @@ print(piano_roll[42, :])
 
 # fs = FluidSynth()
 # fs.midi_to_audio(str(path), str(Path.cwd() / "testing_midi_file.wav"))
+
+batches = slice_midi_to_batches(output_midi)
+print(len(batches))
+print(*batches, sep='\n')
 exit()
 print("\n\nTESTIN HERE\n\n")
 test_midi_file_path = "C:\\Users\\mrmar\\Downloads\\Neural Networks\\Project\\NN_Drummer_Beat_Project\\data\\drummer8\\session2\\32_rock_117_beat_4-4.mid"
