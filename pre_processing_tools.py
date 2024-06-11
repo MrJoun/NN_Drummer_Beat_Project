@@ -136,5 +136,6 @@ def slice_midi_to_batches(midi_data: PrettyMIDI, batch_duration: float = BATCH_D
             notes = []
         else:
             notes.append(note)
+    batches = [batch for batch in batches if batch != 0]
     if VERBAL: print(" DONE")
     return batches
